@@ -40,9 +40,8 @@ func(api *PlayersApi) GetPlayer(res http.ResponseWriter, req *http.Request) {
     player_id := mux.Vars(req)["id"]
 
     var player models.Player
-
     db_err := api.DB.Model(&player).
-                Column("player.*", "Team").
+                Column("player.*").
                 Where("id = ?", player_id).
                 Select()
 
@@ -51,6 +50,10 @@ func(api *PlayersApi) GetPlayer(res http.ResponseWriter, req *http.Request) {
         fmt.Fprint(res, string("Player not found"))
     }
 
+    var team models.Team
+    api.DB.Model(&team).Column("team.*").Where("id = ?", player.TeamID).Select()
+
+    player.Team = &team
     json, json_err := json.Marshal(player)
 
     if json_err != nil {

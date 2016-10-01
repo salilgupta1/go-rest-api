@@ -8,7 +8,7 @@ import (
     "github.com/salilgupta1/go-rest-api/models"
     "github.com/gorilla/mux"
     "gopkg.in/pg.v4"
-    "gopkg.in/pg.v4/orm"
+    // "gopkg.in/pg.v4/orm"
 
 )
 
@@ -41,11 +41,7 @@ func(api *TeamsApi) GetTeam(res http.ResponseWriter, req *http.Request) {
     team_id := mux.Vars(req)["id"]
 
     var team models.Team
-
-    db_err := api.DB.Model(&team).Column("team.*", "Players").
-                    Relation("Players", func(q *orm.Query) *orm.Query {
-                        return q.Where("team_id = ?", team_id)
-                    }).
+    db_err := api.DB.Model(&team).Column("team.*").
                     Where("id = ?", team_id).
                     Select()
 
@@ -54,8 +50,12 @@ func(api *TeamsApi) GetTeam(res http.ResponseWriter, req *http.Request) {
         fmt.Fprint(res, string("Team not found"))
     }
 
-    json, json_err := json.Marshal(team)
+    var players []*models.Player
+    api.DB.Model(&players).Column("player.*").Where("team_id = ?", team_id).Select()
 
+    team.Players = players
+
+    json, json_err := json.Marshal(team)
     if json_err != nil {
         http.Error(res, json_err.Error(), http.StatusInternalServerError)
     }
